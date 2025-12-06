@@ -5,7 +5,7 @@ resource "azurerm_resource_group" "this" {
 }
 
 resource "azurerm_storage_account" "this" {
-  name                     = replace("st${local.resource_name}", "-", "")
+  name                     = substr(replace("st${local.resource_name}", "-", ""),0,23)
   resource_group_name      = azurerm_resource_group.this.name
   location                 = azurerm_resource_group.this.location
   account_tier             = var.storage_account_tier
@@ -54,7 +54,7 @@ resource "azurerm_windows_function_app" "this" {
     }
 
     application_stack {
-      dotnet_version              = "8.0"
+      dotnet_version              = "v8.0"
       use_dotnet_isolated_runtime = true
     }
   }
