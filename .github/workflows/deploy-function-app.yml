@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment'
+        description: 'Deployment environment.'
         required: true
         default: 'dev'
         type: choice
@@ -44,8 +44,9 @@ jobs:
         id: tfpath
         shell: pwsh
         run: |
-          $path = "C:\hostedtoolcache\windows\terraform\${{ env.TF_VERSION }}\x64\terraform.exe"
-          echo "TF_EXE=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $tf = (Get-Command terraform).Source
+          echo "TF_EXE=$tf" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Terraform located at: $tf"
 
       - name: Azure login with OIDC
         uses: azure/login@v1
