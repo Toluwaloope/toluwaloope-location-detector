@@ -40,6 +40,13 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      - name: Get Terraform Absolute Path
+        id: tfpath
+        shell: pwsh
+        run: |
+          $path = ("C:\hostedtoolcache\windows\terraform\{0}\x64\terraform.exe" -f ${{ env.TF_VERSION }})
+          echo "TF_EXE=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Azure login with OIDC
         uses: azure/login@v1
         with:
@@ -53,7 +60,7 @@ jobs:
           Set-Location "${{ env.TERRAFORM_PATH }}"
           Write-Host "Current directory: $(Get-Location)"
           Write-Host "Files in directory: $(Get-ChildItem -Name)"
-          terraform init
+          & $env:TF_EXE init
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Terraform init failed with exit code $LASTEXITCODE"
             exit $LASTEXITCODE
@@ -63,7 +70,7 @@ jobs:
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
-          terraform fmt -check -recursive
+          & $env:TF_EXE  fmt -check -recursive
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Terraform format check failed"
             exit $LASTEXITCODE
@@ -73,7 +80,7 @@ jobs:
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
-          terraform validate
+          & $env:TF_EXE validate
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Terraform validate failed with exit code $LASTEXITCODE"
             exit $LASTEXITCODE
@@ -90,7 +97,7 @@ jobs:
             Write-Host "Error: tfvars file not found: ${ENV_VARS}.tfvars"
             exit 1
           }
-          terraform plan -var-file="${ENV_VARS}.tfvars" -out=tfplan
+          & $env:TF_EXE plan -var-file="${ENV_VARS}.tfvars" -out=tfplan
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Terraform plan failed with exit code $LASTEXITCODE"
             exit $LASTEXITCODE
@@ -105,7 +112,7 @@ jobs:
             exit 1
           }
           Write-Host "Applying terraform plan..."
-          terraform apply -auto-approve tfplan
+          & $env:TF_EXE apply -auto-approve tfplan
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Terraform apply failed with exit code $LASTEXITCODE"
             exit $LASTEXITCODE
