@@ -197,7 +197,7 @@ jobs:
         run: az logout
         if: always()
 
-  deploy-prod:
+  deploy-production:
     runs-on: windows-latest
     name: Deploy Toluwaloope.LocationDetector.Api to Production Environment
     needs: [provision-infrastructure, build]
