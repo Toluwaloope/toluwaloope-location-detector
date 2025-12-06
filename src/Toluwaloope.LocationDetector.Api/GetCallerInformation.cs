@@ -4,6 +4,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Text;
+using Toluwaloope.LocationDetector.Api.Interfaces;
 
 namespace Toluwaloope.LocationDetector.Api;
 
