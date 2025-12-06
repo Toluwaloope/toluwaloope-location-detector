@@ -89,6 +89,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.issue.number,
-              body: `## Workflow Summary\n\n${buildStatus}\n\n**Details:**\n- Build: Checking .NET 8.0 compilation\n- Code Quality: Verifying formatting and style\n- Security: Scanning dependencies\n\nPlease review any warnings or errors in the workflow logs.`,
+              body: `## Workflow Summary\n\n${buildStatus}\n\n**Details:**\n- Build: Checking .NET 8.0 compilation\n- Security: Scanning dependencies\n\nPlease review any warnings or errors in the workflow logs.`,
               event: 'COMMENT'
             });
