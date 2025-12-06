@@ -83,7 +83,8 @@ jobs:
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
-          $outputs = terraform output -json | ConvertFrom-Json
+          $json = terraform output -json
+          $outputs = $json | ConvertFrom-Json
           "resource_group_name=$($outputs.resource_group_name.value)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           "function_app_name=$($outputs.function_app_name.value)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
