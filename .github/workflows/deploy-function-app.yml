@@ -77,7 +77,8 @@ jobs:
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
-          terraform plan
+          $tfvarsFile = "${{ github.event.inputs.environment }}.tfvars"
+          terraform plan -var-file=$tfvarsFile -out=tfplan
 
       - name: Terraform Apply
         shell: pwsh
@@ -140,7 +141,7 @@ jobs:
         shell: pwsh
         run: |
           Set-Location "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/publish"
-          Compress-Archive -Path . -DestinationPath ../../function-app.zip -Force
+          Compress-Archive -Path . -DestinationPath ../../../function-app.zip -Force
           "ARTIFACT_NAME=function-app.zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload artifact
@@ -166,7 +167,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: function-app-${{ github.sha }}
-          path: function-app.zip
+          path: .
 
       - name: Azure login with OIDC (Dev)
         uses: azure/login@v1
@@ -196,7 +197,7 @@ jobs:
         run: az logout
         if: always()
 
-  deploy-production:
+  deploy-prod:
     runs-on: windows-latest
     name: Deploy Toluwaloope.LocationDetector.Api to Production Environment
     needs: [provision-infrastructure, build]
@@ -212,6 +213,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: function-app-${{ github.sha }}
+          path: .
 
       - name: Azure login with OIDC (Production)
         uses: azure/login@v1
