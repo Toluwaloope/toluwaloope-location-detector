@@ -65,7 +65,7 @@ public class GetCallerInformation
     /// Extracts the client IP address from the request, checking X-Forwarded-For header first,
     /// then falling back to the direct connection IP.
     /// </summary>
-    private string ExtractClientIp(HttpRequest req)
+    private string? ExtractClientIp(HttpRequest req)
     {
         // Try X-Forwarded-For header (common in proxied/load-balanced scenarios)
         var ip = req.Headers["X-Forwarded-For"]
@@ -82,13 +82,13 @@ public class GetCallerInformation
 
         // Fall back to direct connection IP
         var directIp = req.HttpContext?.Connection?.RemoteIpAddress?.ToString();
-        return !IsLocalhost(directIp) ? directIp : null;
+        return string.IsNullOrWhiteSpace(directIp) || IsLocalhost(directIp) ? null : directIp;
     }
 
     /// <summary>
     /// Determines if the given IP address is a localhost/loopback address.
     /// </summary>
-    private bool IsLocalhost(string ip)
+    private bool IsLocalhost(string? ip)
     {
         return string.IsNullOrWhiteSpace(ip) || 
                ip is "127.0.0.1" or "::1" or "localhost";

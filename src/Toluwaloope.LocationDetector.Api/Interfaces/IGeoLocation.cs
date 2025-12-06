@@ -1,8 +1,8 @@
 namespace Toluwaloope.LocationDetector.Api.Interfaces;
 
 /// <summary>
-/// Read-only interface for geolocation data.
-/// Provides access to geolocation information without allowing modifications.
+/// Interface for geolocation services.
+/// Provides methods to retrieve and access geolocation information.
 /// </summary>
 public interface IGeoLocation
 {
@@ -35,4 +35,11 @@ public interface IGeoLocation
     /// Gets the longitude coordinate.
     /// </summary>
     float Lon { get; }
+
+    /// <summary>
+    /// Retrieves geolocation information for the specified IP address asynchronously.
+    /// </summary>
+    /// <param name="ip">The IP address to query for geolocation information.</param>
+    /// <returns>A task representing the asynchronous operation. The result is a GeoLocation object containing the geolocation data, or null if the operation fails.</returns>
+    Task<IGeoLocation?> GetGeoLocationAsync(string ip);
 }
