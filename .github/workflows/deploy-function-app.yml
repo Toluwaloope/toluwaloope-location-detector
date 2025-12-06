@@ -1,4 +1,4 @@
-name: Build and Deploy to Azure Function App
+name: Build and Deploy to Toluwaloope.LocationDetector.Api Azure Function App
 
 on:
   workflow_dispatch:
@@ -298,12 +298,13 @@ jobs:
       - name: Create deployment summary
         shell: pwsh
         run: |
+          $environment = ('${{ github.event.inputs.environment }}'.ToUpper())
           $summary = @"
           ## 🚀 Deployment Summary
           
           **Status:** ${{ env.STATUS }}
           
-          **Environment:** ${{ github.event.inputs.environment | upper }}
+          **Environment:** $environment
           **Function App:** ${{ needs.provision-infrastructure.outputs.function_app_name }}
           **Resource Group:** ${{ needs.provision-infrastructure.outputs.resource_group_name }}
           
