@@ -51,42 +51,91 @@ jobs:
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
+          Write-Host "Current directory: $(Get-Location)"
+          Write-Host "Files in directory: $(Get-ChildItem -Name)"
           terraform init
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Terraform init failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
 
       - name: Terraform Format Check
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
           terraform fmt -check -recursive
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Terraform format check failed"
+            exit $LASTEXITCODE
+          }
 
       - name: Terraform Validate
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
           terraform validate
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Terraform validate failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
 
       - name: Terraform Plan
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
           $ENV_VARS = '${{ github.event.inputs.environment }}'
+          Write-Host "Planning with environment: $ENV_VARS"
+          Write-Host "Looking for tfvars file: ${ENV_VARS}.tfvars"
+          if (-not (Test-Path "${ENV_VARS}.tfvars")) {
+            Write-Host "Error: tfvars file not found: ${ENV_VARS}.tfvars"
+            exit 1
+          }
           terraform plan -var-file="${ENV_VARS}.tfvars" -out=tfplan
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Terraform plan failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
 
       - name: Terraform Apply
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
+          if (-not (Test-Path "tfplan")) {
+            Write-Host "Error: tfplan file not found"
+            exit 1
+          }
+          Write-Host "Applying terraform plan..."
           terraform apply -auto-approve tfplan
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Terraform apply failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+          Write-Host "Terraform apply completed successfully"
 
       - name: Export Terraform Outputs
         id: tf-outputs
         shell: pwsh
         run: |
           Set-Location "${{ env.TERRAFORM_PATH }}"
+          Write-Host "Exporting Terraform outputs..."
           $json = terraform output -json
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Error: Failed to get terraform outputs"
+            exit $LASTEXITCODE
+          }
+          Write-Host "Terraform output JSON: $json"
           $outputs = $json | ConvertFrom-Json
-          "resource_group_name=$($outputs.resource_group_name.value)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "function_app_name=$($outputs.function_app_name.value)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          
+          $resourceGroupName = $outputs.resource_group_name.value
+          $functionAppName = $outputs.function_app_name.value
+          
+          Write-Host "Resource Group Name: $resourceGroupName"
+          Write-Host "Function App Name: $functionAppName"
+          
+          "resource_group_name=$resourceGroupName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "function_app_name=$functionAppName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          
+          Write-Host "Outputs exported successfully"
 
       - name: Azure logout
         shell: pwsh
@@ -152,6 +201,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: function-app-${{ github.sha }}
+          path: function-app.zip
 
       - name: Azure login with OIDC (Dev)
         uses: azure/login@v1
