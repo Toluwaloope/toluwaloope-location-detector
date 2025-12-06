@@ -62,7 +62,6 @@ jobs:
       - name: Terraform Format Check
         shell: pwsh
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
           terraform fmt -check -recursive
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Terraform format check failed"
@@ -72,7 +71,6 @@ jobs:
       - name: Terraform Validate
         shell: pwsh
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
           terraform validate
           if ($LASTEXITCODE -ne 0) {
             Write-Host "Terraform validate failed with exit code $LASTEXITCODE"
@@ -82,7 +80,6 @@ jobs:
       - name: Terraform Plan
         shell: pwsh
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
           $ENV_VARS = '${{ github.event.inputs.environment }}'
           Write-Host "Planning with environment: $ENV_VARS"
           Write-Host "Looking for tfvars file: ${ENV_VARS}.tfvars"
@@ -99,7 +96,6 @@ jobs:
       - name: Terraform Apply
         shell: pwsh
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
           if (-not (Test-Path "tfplan")) {
             Write-Host "Error: tfplan file not found"
             exit 1
@@ -116,7 +112,6 @@ jobs:
         id: tf-outputs
         shell: pwsh
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
           Write-Host "Exporting Terraform outputs..."
           $json = terraform output -json
           if ($LASTEXITCODE -ne 0) {
