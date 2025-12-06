@@ -25,7 +25,7 @@ permissions:
 
 jobs:
   provision-infrastructure:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: Provision Toluwaloope.LocationDetector.Api's Infrastructure
     outputs:
       resource_group_name: ${{ steps.tf-outputs.outputs.resource_group_name }}
@@ -42,11 +42,11 @@ jobs:
 
       - name: Get Terraform Absolute Path
         id: tfpath
-        shell: pwsh
+        shell: bash
         run: |
-          $tf = (Get-Command terraform).Source
-          echo "TF_EXE=$tf" | Out-File -FilePath $env:GITHUB_ENV -Append
-          Write-Host "Terraform located at: $tf"
+          TF=$(which terraform)
+          echo "TF_EXE=$TF" >> $GITHUB_ENV
+          echo "Terraform located at: $TF"
 
       - name: Azure login with OIDC
         uses: azure/login@v1
@@ -56,60 +56,64 @@ jobs:
           subscription-id: ${{ github.event.inputs.environment == 'dev' && secrets.AZURE_DEV_SUBSCRIPTION_ID || secrets.AZURE_PROD_SUBSCRIPTION_ID }}
 
       - name: Terraform Init
-        shell: pwsh
+        shell: bash
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
+          cd "${{ env.TERRAFORM_PATH }}"
           terraform init
 
       - name: Terraform Format Check
-        shell: pwsh
+        shell: bash
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
+          cd "${{ env.TERRAFORM_PATH }}"
           terraform fmt -check -recursive
 
       - name: Terraform Validate
-        shell: pwsh
+        shell: bash
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
+          cd "${{ env.TERRAFORM_PATH }}"
           terraform validate
 
       - name: Terraform Plan
-        shell: pwsh
+        shell: bash
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
-          $tfvarsFile = "${{ github.event.inputs.environment }}.tfvars"
-          terraform plan -var-file=$tfvarsFile -out=tfplan
+          cd "${{ env.TERRAFORM_PATH }}"
+          TFVARS_FILE="${{ github.event.inputs.environment }}.tfvars"
+          if [ ! -f "$TFVARS_FILE" ]; then
+            echo "Error: tfvars file not found: $TFVARS_FILE"
+            exit 1
+          fi
+          terraform plan -var-file="$TFVARS_FILE" -out=tfplan
 
       - name: Terraform Apply
-        shell: pwsh
+        shell: bash
         run: |
-          Set-Location "${{ env.TERRAFORM_PATH }}"
+          cd "${{ env.TERRAFORM_PATH }}"
           terraform apply -auto-approve tfplan
 
       - name: Export Terraform Outputs
         id: tf-outputs
-        shell: pwsh
+        shell: bash
         run: |
-          $json = terraform output -json
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "Error: Failed to get terraform outputs"
-            exit $LASTEXITCODE
-          }
-          $outputs = $json | ConvertFrom-Json
+          cd "${{ env.TERRAFORM_PATH }}"
+          JSON=$(terraform output -json)
+          if [ $? -ne 0 ]; then
+            echo "Error: Failed to get terraform outputs"
+            exit 1
+          fi
           
-          $resourceGroupName = $outputs.resource_group_name.value
-          $functionAppName = $outputs.function_app_name.value
+          RESOURCE_GROUP_NAME=$(echo $JSON | jq -r '.resource_group_name.value')
+          FUNCTION_APP_NAME=$(echo $JSON | jq -r '.function_app_name.value')
           
-          "resource_group_name=$resourceGroupName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "function_app_name=$functionAppName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
+          echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
 
       - name: Azure logout
-        shell: pwsh
+        shell: bash
         run: az logout
         if: always()
 
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: Build Toluwaloope.LocationDetector.Api Project
     needs: provision-infrastructure
     outputs:
@@ -138,11 +142,11 @@ jobs:
         working-directory: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
       - name: Package for deployment
-        shell: pwsh
+        shell: bash
         run: |
-          Set-Location "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/publish"
-          Compress-Archive -Path . -DestinationPath ../../../function-app.zip -Force
-          "ARTIFACT_NAME=function-app.zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          cd "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/publish"
+          zip -r ../../../function-app.zip .
+          echo "ARTIFACT_NAME=function-app.zip" >> $GITHUB_ENV
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -152,12 +156,10 @@ jobs:
           retention-days: 5
 
   deploy-dev:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: Deploy Toluwaloope.LocationDetector.Api to Dev Environment
     needs: [provision-infrastructure, build]
     if: github.event.inputs.environment == 'dev'
-    environment:
-      name: development
     
     steps:
       - name: Checkout code
@@ -184,27 +186,25 @@ jobs:
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
       - name: Verify Dev deployment
-        shell: pwsh
+        shell: bash
         run: |
-          Write-Host "✓ Checking Dev Azure Function App deployment status..."
-          az functionapp show `
-            --resource-group ${{ needs.provision-infrastructure.outputs.resource_group_name }} `
-            --name ${{ needs.provision-infrastructure.outputs.function_app_name }} `
+          echo "✓ Checking Dev Azure Function App deployment status..."
+          az functionapp show \
+            --resource-group ${{ needs.provision-infrastructure.outputs.resource_group_name }} \
+            --name ${{ needs.provision-infrastructure.outputs.function_app_name }} \
             --query "{state: state, defaultHostName: defaultHostName}"
 
       - name: Azure logout
-        shell: pwsh
+        shell: bash
         run: az logout
         if: always()
 
   deploy-production:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: Deploy Toluwaloope.LocationDetector.Api to Production Environment
     needs: [provision-infrastructure, build]
     if: github.event.inputs.environment == 'prod'
-    environment:
-      name: production
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -230,21 +230,21 @@ jobs:
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
       - name: Verify Production deployment
-        shell: pwsh
+        shell: bash
         run: |
-          Write-Host "✓ Checking Production Azure Function App deployment status..."
-          az functionapp show `
-            --resource-group ${{ needs.provision-infrastructure.outputs.resource_group_name }} `
-            --name ${{ needs.provision-infrastructure.outputs.function_app_name }} `
+          echo "✓ Checking Production Azure Function App deployment status..."
+          az functionapp show \
+            --resource-group ${{ needs.provision-infrastructure.outputs.resource_group_name }} \
+            --name ${{ needs.provision-infrastructure.outputs.function_app_name }} \
             --query "{state: state, defaultHostName: defaultHostName}"
 
       - name: Azure logout
-        shell: pwsh
+        shell: bash
         run: az logout
         if: always()
 
   post-deployment-tests:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: Post-Deployment Validation
     needs: [provision-infrastructure, deploy-dev, deploy-production]
     if: |
@@ -258,37 +258,31 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Wait for deployment to stabilize
-        shell: pwsh
-        run: Start-Sleep -Seconds 30
+        shell: bash
+        run: sleep 30
 
       - name: Health check
-        shell: pwsh
+        shell: bash
         run: |
-          $FUNCTION_APP_NAME = "${{ needs.provision-infrastructure.outputs.function_app_name }}"
-          $FUNCTION_APP_URL = "https://$FUNCTION_APP_NAME.azurewebsites.net/api/GetCallerInformation"
-          Write-Host "Testing function endpoint: $FUNCTION_APP_URL"
+          FUNCTION_APP_NAME="${{ needs.provision-infrastructure.outputs.function_app_name }}"
+          FUNCTION_APP_URL="https://${FUNCTION_APP_NAME}.azurewebsites.net/api/GetCallerInformation"
+          echo "Testing function endpoint: $FUNCTION_APP_URL"
           
-          try {
-            $RESPONSE = Invoke-WebRequest -Uri $FUNCTION_APP_URL -UseBasicParsing
-            $HTTP_CODE = $RESPONSE.StatusCode
-            $BODY = $RESPONSE.Content
-          } catch {
-            $HTTP_CODE = $_.Exception.Response.StatusCode.Value__
-            $BODY = $_.Exception.Message
-          }
+          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" "$FUNCTION_APP_URL")
+          BODY=$(cat /tmp/response.txt)
           
-          Write-Host "HTTP Status: $HTTP_CODE"
-          Write-Host "Response: $BODY"
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
           
-          if ($HTTP_CODE -ge 200 -and $HTTP_CODE -lt 400) {
-            Write-Host "✓ Health check passed"
-          } else {
-            Write-Host "✗ Health check failed with status code: $HTTP_CODE"
+          if [ $HTTP_CODE -ge 200 ] && [ $HTTP_CODE -lt 400 ]; then
+            echo "✓ Health check passed"
+          else
+            echo "✗ Health check failed with status code: $HTTP_CODE"
             exit 1
-          }
+          fi
 
   notify:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: Send Deployment Notification
     needs: [provision-infrastructure, build, deploy-dev, deploy-production, post-deployment-tests]
     if: always()
@@ -296,40 +290,42 @@ jobs:
     steps:
       - name: Determine deployment status
         id: status
-        shell: pwsh
+        shell: bash
         run: |
-          $ENVIRONMENT = "${{ github.event.inputs.environment }}"
-          if ($ENVIRONMENT -eq "dev") {
-            $DEPLOY_RESULT = "${{ needs.deploy-dev.result }}"
-          } else {
-            $DEPLOY_RESULT = "${{ needs.deploy-production.result }}"
-          }
+          ENVIRONMENT="${{ github.event.inputs.environment }}"
+          if [ "$ENVIRONMENT" = "dev" ]; then
+            DEPLOY_RESULT="${{ needs.deploy-dev.result }}"
+          else
+            DEPLOY_RESULT="${{ needs.deploy-production.result }}"
+          fi
           
-          if ($DEPLOY_RESULT -eq "success" -and "${{ needs.post-deployment-tests.result }}" -eq "success") {
-            "STATUS=✅ Deployment Successful" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-            "ICON=✓" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          } else {
-            "STATUS=❌ Deployment Failed" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-            "ICON=✗" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          }
+          if [ "$DEPLOY_RESULT" = "success" ] && [ "${{ needs.post-deployment-tests.result }}" = "success" ]; then
+            echo "STATUS=✅ Deployment Successful" >> $GITHUB_ENV
+            echo "ICON=✓" >> $GITHUB_ENV
+          else
+            echo "STATUS=❌ Deployment Failed" >> $GITHUB_ENV
+            echo "ICON=✗" >> $GITHUB_ENV
+          fi
 
       - name: Create deployment summary
-        shell: pwsh
+        shell: bash
         run: |
-          $environment = ('${{ github.event.inputs.environment }}'.ToUpper())
-          $summary = @"
+          ENVIRONMENT=$(echo "${{ github.event.inputs.environment }}" | tr '[:lower:]' '[:upper:]')
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          cat >> $GITHUB_STEP_SUMMARY << EOF
           ## 🚀 Deployment Summary
           
           **Status:** ${{ env.STATUS }}
           
-          **Environment:** $environment
+          **Environment:** $ENVIRONMENT
           **Function App:** ${{ needs.provision-infrastructure.outputs.function_app_name }}
           **Resource Group:** ${{ needs.provision-infrastructure.outputs.resource_group_name }}
           
           **Details:**
           - **Commit:** ${{ github.sha }}
           - **Triggered by:** ${{ github.actor }}
-          - **Timestamp:** $(Get-Date -Format 'u')
+          - **Timestamp:** $TIMESTAMP
           
           **Workflow Results:**
           - Build: ${{ needs.build.result }}
@@ -340,6 +336,4 @@ jobs:
           **Subscription IDs:**
           - Dev: \`${{ secrets.AZURE_DEV_SUBSCRIPTION_ID }}\`
           - Production: \`${{ secrets.AZURE_PROD_SUBSCRIPTION_ID }}\`
-          "@
-          
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $summary
+          EOF
