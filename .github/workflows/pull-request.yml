@@ -101,12 +101,12 @@ jobs:
         if: always()
         with:
           script: |
-            const context = github.context;
-            const buildStatus = context.payload.pull_request ? '✓ Build passed' : '⚠ Check workflow logs';
+            const ctx = github.context;
+            const buildStatus = ctx.payload.pull_request ? '✓ Build passed' : '⚠ Check workflow logs';
             
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              issue_number: ctx.issue.number,
+              owner: ctx.repo.owner,
+              repo: ctx.repo.repo,
               body: `## Workflow Summary\n\n${buildStatus}\n\n**Details:**\n- Build: Checking .NET 8.0 compilation\n- Code Quality: Verifying formatting and style\n- Security: Scanning dependencies\n\nPlease review any warnings or errors in the workflow logs.`
             });
