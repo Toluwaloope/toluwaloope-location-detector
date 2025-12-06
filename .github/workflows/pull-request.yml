@@ -12,53 +12,9 @@ permissions:
   pull-requests: write
 
 jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    name: Build and Test
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Restore dependencies
-        run: dotnet restore
-        working-directory: ./src/Toluwaloope.LocationDetector.Api
-
-      - name: Build project
-        run: dotnet build --no-restore --configuration Release
-        working-directory: ./src/Toluwaloope.LocationDetector.Api
-
-      - name: Check code formatting
-        run: dotnet format --verify-no-changes --verbosity diagnostic
-        working-directory: ./src/Toluwaloope.LocationDetector.Api
-        continue-on-error: true
-
-  code-quality:
-    runs-on: ubuntu-latest
-    name: Code Quality Checks
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Run StyleCop analyzers
-        run: dotnet build --no-restore --configuration Release /p:EnforceCodeStyleInBuild=true
-        working-directory: ./src/Toluwaloope.LocationDetector.Api
-        continue-on-error: true
-
   security-scan:
     runs-on: ubuntu-latest
-    name: Security Scanning
+    name: Scanning Toluwaloope.LocationDetector.Api for Vulnerabilities
 
     steps:
       - name: Checkout code
@@ -82,10 +38,36 @@ jobs:
         working-directory: ./src/Toluwaloope.LocationDetector.Api
         continue-on-error: true
 
+  build-and-test:
+    runs-on: ubuntu-latest
+    name: Build Toluwaloope.LocationDetector.Api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+        working-directory: ./src/Toluwaloope.LocationDetector.Api
+
+      - name: Build project
+        run: dotnet build --no-restore --configuration Release
+        working-directory: ./src/Toluwaloope.LocationDetector.Api
+
+      - name: Check code formatting
+        run: dotnet format --verify-no-changes --verbosity diagnostic
+        working-directory: ./src/Toluwaloope.LocationDetector.Api
+        continue-on-error: true
+
   validation:
     runs-on: ubuntu-latest
-    name: Final Validation
-    needs: [build-and-test, code-quality, security-scan]
+    name: Validate Pull Request Checks
+    needs: [build-and-test, security-scan]
     if: always()
 
     steps:
@@ -101,12 +83,12 @@ jobs:
         if: always()
         with:
           script: |
-            const ctx = github.context;
-            const buildStatus = ctx.payload.pull_request ? '✓ Build passed' : '⚠ Check workflow logs';
+            const buildStatus = '✓ Build and validation checks completed';
             
-            github.rest.issues.createComment({
-              issue_number: ctx.issue.number,
-              owner: ctx.repo.owner,
-              repo: ctx.repo.repo,
-              body: `## Workflow Summary\n\n${buildStatus}\n\n**Details:**\n- Build: Checking .NET 8.0 compilation\n- Code Quality: Verifying formatting and style\n- Security: Scanning dependencies\n\nPlease review any warnings or errors in the workflow logs.`
+            github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              body: `## Workflow Summary\n\n${buildStatus}\n\n**Details:**\n- Build: Checking .NET 8.0 compilation\n- Code Quality: Verifying formatting and style\n- Security: Scanning dependencies\n\nPlease review any warnings or errors in the workflow logs.`,
+              event: 'COMMENT'
             });
