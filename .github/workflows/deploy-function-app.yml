@@ -44,7 +44,7 @@ jobs:
         id: tfpath
         shell: pwsh
         run: |
-          $path = ("C:\hostedtoolcache\windows\terraform\{0}\x64\terraform.exe" -f ${{ env.TF_VERSION }})
+          $path = "C:\hostedtoolcache\windows\terraform\${{ env.TF_VERSION }}\x64\terraform.exe"
           echo "TF_EXE=$path" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Azure login with OIDC
