@@ -46,6 +46,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
 
       - name: Get Terraform Absolute Path
         id: tfpath
@@ -121,8 +122,8 @@ jobs:
       - name: Capture Terraform Output
         id: tf-out
         run: |
-          output=$(terraform output -json)
-          echo "json=$output" >> $GITHUB_OUTPUT
+          PLAN_OUTPUT=$(terraform output -json)
+          echo "son=$PLAN_OUTPUT" >> $GITHUB_OUTPUT
 
       - name: Export Terraform Outputs
         id: tf-outputs
