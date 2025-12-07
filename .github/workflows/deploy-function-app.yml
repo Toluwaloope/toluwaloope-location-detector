@@ -119,13 +119,6 @@ jobs:
           TFVARS_FILE="${{ github.event.inputs.environment }}.tfvars"
           terraform apply -var-file="$TFVARS_FILE" -auto-approve
 
-      #- name: Capture Terraform Output
-      #  id: tf-out
-      #  run: |
-      #    cd "${{ env.TERRAFORM_PATH }}"
-      #    planoutput=$(terraform output -json)
-      #    echo "json=$planoutput" >> $GITHUB_OUTPUT
-
       - name: Export Terraform Outputs
         id: tf-outputs
         shell: bash
@@ -206,7 +199,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: function-app-${{ github.sha }}
-          path: .
+          path: function-app.zip
 
       - name: Azure login with OIDC (Dev)
         uses: azure/login@v1
@@ -220,7 +213,6 @@ jobs:
         with:
           app-name: ${{ needs.provision-infrastructure.outputs.function_app_name }}
           package: function-app.zip
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
       - name: Verify Dev deployment
         shell: bash
@@ -250,7 +242,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: function-app-${{ github.sha }}
-          path: .
+          path: function-app.zip
 
       - name: Azure login with OIDC (Production)
         uses: azure/login@v1
@@ -264,7 +256,6 @@ jobs:
         with:
           app-name: ${{ needs.provision-infrastructure.outputs.function_app_name }}
           package: function-app.zip
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
 
       - name: Verify Production deployment
         shell: bash
