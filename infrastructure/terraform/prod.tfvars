@@ -1,7 +1,7 @@
 environment          = "prod"
 location             = "East US"
 project_name         = "toluwaloope-location-detector"
-app_service_plan_sku = "B1"
+app_service_plan_sku = "F1"
 
 tags = {
   Project     = "toluwaloope-location-detector"
