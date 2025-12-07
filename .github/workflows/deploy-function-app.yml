@@ -118,6 +118,12 @@ jobs:
           TFVARS_FILE="${{ github.event.inputs.environment }}.tfvars"
           terraform apply -var-file="$TFVARS_FILE" -auto-approve
 
+      - name: Capture Terraform Output
+        id: tf-out
+        run: |
+          output=$(terraform output -json)
+          echo "json=$output" >> $GITHUB_OUTPUT
+
       - name: Export Terraform Outputs
         id: tf-outputs
         shell: bash
@@ -125,22 +131,9 @@ jobs:
           cd "${{ env.TERRAFORM_PATH }}"
           
           # Capture terraform outputs and filter to clean lines only
-          #RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name 2>/dev/null | grep -v '::' | grep -v 'Terraform' | tail -1)
-          #FUNCTION_APP_NAME=$(terraform output -raw function_app_name 2>/dev/null | grep -v '::' | grep -v 'Terraform' | tail -1)
-          RESOURCE_GROUP_NAME=$(/usr/local/bin/terraform output -raw resource_group_name 2>/dev/null)
-          FUNCTION_APP_NAME=$(/usr/local/bin/terraform output -raw function_app_name 2>/dev/null)
-          
-          # Verify we got values
-          if [ -z "$RESOURCE_GROUP_NAME" ]; then
-            echo "Error: Could not retrieve resource_group_name"
-            exit 1
-          fi
-          
-          if [ -z "$FUNCTION_APP_NAME" ]; then
-            echo "Error: Could not retrieve function_app_name"
-            exit 1
-          fi
-          
+          RESOURCE_GROUP_NAME=${{ fromJson(steps.tf-out.outputs.json).resource_group_name.value }}
+          FUNCTION_APP_NAME=${{ fromJson(steps.tf-out.outputs.json).function_app_name.value }}
+
           # Output the values for verification
           echo "Resource Group: $RESOURCE_GROUP_NAME"
           echo "Function App: $FUNCTION_APP_NAME"
