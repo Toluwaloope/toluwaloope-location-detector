@@ -129,8 +129,8 @@ jobs:
             exit 1
           fi
           
-          RESOURCE_GROUP_NAME=$(echo $JSON | jq -r '.resource_group_name.value')
-          FUNCTION_APP_NAME=$(echo $JSON | jq -r '.function_app_name.value')
+          RESOURCE_GROUP_NAME=$(echo "$JSON" | jq -r '.resource_group_name.value')
+          FUNCTION_APP_NAME=$(echo "$JSON" | jq -r '.function_app_name.value')
           
           echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
           echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
