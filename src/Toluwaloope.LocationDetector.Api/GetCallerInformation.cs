@@ -49,7 +49,7 @@ public class GetCallerInformation
                 return new NotFoundObjectResult(errorMessage);
             }
 
-            var responseMessage = $"IP: {ip} | Location: {location.City}, {location.RegionName}, {location.Country} (Lat: {location.Lat}, Long: {location.Lon})";
+            var responseMessage = $"IP: {ip} | Location: {location.City}, {location.Zip}, {location.RegionName}, {location.Country} (Lat: {location.Lat}, Long: {location.Lon})";
             _logger.LogInformation($"Successfully resolved location for IP {ip}");
 
             return new OkObjectResult(responseMessage);
