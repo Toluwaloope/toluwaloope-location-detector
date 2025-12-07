@@ -124,7 +124,6 @@ jobs:
         run: |
           cd "${{ env.TERRAFORM_PATH }}"
           planoutput=$(terraform output -json)
-          echo "Terraform Json Output : $planoutput"
           echo "json=$planoutput" >> $GITHUB_OUTPUT
 
       - name: Export Terraform Outputs
