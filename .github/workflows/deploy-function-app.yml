@@ -127,11 +127,6 @@ jobs:
           RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
           FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
           
-          if [ $? -ne 0 ]; then
-            echo "Error: Failed to get terraform outputs"
-            exit 1
-          fi
-          
           echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
           echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
 
