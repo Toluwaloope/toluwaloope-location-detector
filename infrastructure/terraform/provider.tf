@@ -9,12 +9,12 @@ terraform {
   }
 
   backend "azurerm" {
-     resource_group_name  = "terraform-state-rg"
-     storage_account_name = "toluwaloopetfstate"
-     container_name       = "tfstate"
-     key                  = "location-detector.tfstate"
-     use_oidc             = true
-   }
+    resource_group_name  = "terraform-state-rg"
+    storage_account_name = "toluwaloopetfstate"
+    container_name       = "tfstate"
+    key                  = "location-detector.tfstate"
+    use_oidc             = true
+  }
 }
 
 provider "azurerm" {
