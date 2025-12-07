@@ -123,6 +123,7 @@ jobs:
         id: tf-out
         run: |
           planoutput=$(terraform output -json)
+          echo "Terraform Json Output : $planoutput"
           echo "json=$planoutput" >> $GITHUB_OUTPUT
 
       - name: Export Terraform Outputs
