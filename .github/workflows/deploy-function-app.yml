@@ -32,6 +32,8 @@ jobs:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ github.event.inputs.environment == 'dev' && secrets.AZURE_DEV_SUBSCRIPTION_ID || secrets.AZURE_PROD_SUBSCRIPTION_ID }}
+      # Backend always uses dev subscription where the storage account resides
+      ARM_BACKEND_SUBSCRIPTION_ID: ${{ secrets.AZURE_PROD_SUBSCRIPTION_ID }}
     outputs:
       resource_group_name: ${{ steps.tf-outputs.outputs.resource_group_name }}
       function_app_name: ${{ steps.tf-outputs.outputs.function_app_name }}
@@ -64,7 +66,28 @@ jobs:
         shell: bash
         run: |
           cd "${{ env.TERRAFORM_PATH }}"
+          # Use dev subscription for backend access
+          export ARM_SUBSCRIPTION_ID="${{ secrets.AZURE_PROD_SUBSCRIPTION_ID }}"
           terraform init
+          # Switch back to target environment subscription for plan/apply
+          export ARM_SUBSCRIPTION_ID="${{ github.event.inputs.environment == 'dev' && secrets.AZURE_DEV_SUBSCRIPTION_ID || secrets.AZURE_PROD_SUBSCRIPTION_ID }}"
+
+      - name: Terraform Workspace Setup
+        shell: bash
+        run: |
+          cd "${{ env.TERRAFORM_PATH }}"
+          WORKSPACE="${{ github.event.inputs.environment }}"
+          
+          # Create workspace if it doesn't exist, or select if it does
+          if terraform workspace list | grep -q "$WORKSPACE"; then
+            echo "Selecting existing workspace: $WORKSPACE"
+            terraform workspace select "$WORKSPACE"
+          else
+            echo "Creating new workspace: $WORKSPACE"
+            terraform workspace new "$WORKSPACE"
+          fi
+          
+          echo "Current workspace: $(terraform workspace show)"
 
       - name: Terraform Format Check
         shell: bash
@@ -93,7 +116,8 @@ jobs:
         shell: bash
         run: |
           cd "${{ env.TERRAFORM_PATH }}"
-          terraform apply -auto-approve tfplan
+          TFVARS_FILE="${{ github.event.inputs.environment }}.tfvars"
+          terraform apply -var-file="$TFVARS_FILE" -auto-approve
 
       - name: Export Terraform Outputs
         id: tf-outputs

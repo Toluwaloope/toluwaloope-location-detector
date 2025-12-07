@@ -8,13 +8,13 @@ terraform {
     }
   }
 
-  # Uncomment below to use remote state in Azure Storage Account
-  # backend "azurerm" {
-  #   resource_group_name  = "rg-terraform-state"
-  #   storage_account_name = "tfstate"
-  #   container_name       = "tfstate"
-  #   key                  = "location-detector.tfstate"
-  # }
+  backend "azurerm" {
+     resource_group_name  = "terraform-state-rg"
+     storage_account_name = "toluwaloopetfstate"
+     container_name       = "tfstate"
+     key                  = "location-detector.tfstate"
+     use_oidc             = true
+   }
 }
 
 provider "azurerm" {
