@@ -199,7 +199,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: function-app-${{ github.sha }}
-          path: function-app.zip
+          path: .
 
       - name: Azure login with OIDC (Dev)
         uses: azure/login@v1
@@ -212,7 +212,7 @@ jobs:
         uses: azure/functions-action@v1
         with:
           app-name: ${{ needs.provision-infrastructure.outputs.function_app_name }}
-          package: function-app.zip
+          package: ./function-app.zip
 
       - name: Verify Dev deployment
         shell: bash
@@ -242,7 +242,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: function-app-${{ github.sha }}
-          path: function-app.zip
+          path: .
 
       - name: Azure login with OIDC (Production)
         uses: azure/login@v1
@@ -255,7 +255,7 @@ jobs:
         uses: azure/functions-action@v1
         with:
           app-name: ${{ needs.provision-infrastructure.outputs.function_app_name }}
-          package: function-app.zip
+          package: ./function-app.zip
 
       - name: Verify Production deployment
         shell: bash
