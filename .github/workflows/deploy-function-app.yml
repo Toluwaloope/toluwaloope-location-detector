@@ -33,7 +33,7 @@ jobs:
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ github.event.inputs.environment == 'dev' && secrets.AZURE_DEV_SUBSCRIPTION_ID || secrets.AZURE_PROD_SUBSCRIPTION_ID }}
       # Backend always uses dev subscription where the storage account resides
-      ARM_BACKEND_SUBSCRIPTION_ID: ${{ secrets.AZURE_PROD_SUBSCRIPTION_ID }}
+      ARM_BACKEND_SUBSCRIPTION_ID: ${{ secrets.AZURE_DEV_SUBSCRIPTION_ID }}
     outputs:
       resource_group_name: ${{ steps.tf-outputs.outputs.resource_group_name }}
       function_app_name: ${{ steps.tf-outputs.outputs.function_app_name }}
@@ -67,10 +67,8 @@ jobs:
         run: |
           cd "${{ env.TERRAFORM_PATH }}"
           # Use dev subscription for backend access
-          export ARM_SUBSCRIPTION_ID="${{ secrets.AZURE_PROD_SUBSCRIPTION_ID }}"
+          export ARM_SUBSCRIPTION_ID="${{ secrets.AZURE_DEV_SUBSCRIPTION_ID }}"
           terraform init
-          # Switch back to target environment subscription for plan/apply
-          export ARM_SUBSCRIPTION_ID="${{ github.event.inputs.environment == 'dev' && secrets.AZURE_DEV_SUBSCRIPTION_ID || secrets.AZURE_PROD_SUBSCRIPTION_ID }}"
 
       - name: Terraform Workspace Setup
         shell: bash
@@ -104,20 +102,22 @@ jobs:
       - name: Terraform Plan
         shell: bash
         run: |
+          # Switch back to target environment subscription for plan/apply
+          export ARM_SUBSCRIPTION_ID="${{ github.event.inputs.environment == 'dev' && secrets.AZURE_DEV_SUBSCRIPTION_ID || secrets.AZURE_PROD_SUBSCRIPTION_ID }}"
           cd "${{ env.TERRAFORM_PATH }}"
           TFVARS_FILE="${{ github.event.inputs.environment }}.tfvars"
           if [ ! -f "$TFVARS_FILE" ]; then
             echo "Error: tfvars file not found: $TFVARS_FILE"
             exit 1
           fi
-          terraform plan -var-file="$TFVARS_FILE" -out=tfplan
+          terraform plan -var-file="$TFVARS_FILE" -var="backend_subscription_id=${{ secrets.AZURE_DEV_SUBSCRIPTION_ID }}"
 
       - name: Terraform Apply
         shell: bash
         run: |
           cd "${{ env.TERRAFORM_PATH }}"
           TFVARS_FILE="${{ github.event.inputs.environment }}.tfvars"
-          terraform apply -var-file="$TFVARS_FILE" -auto-approve
+          terraform apply -var-file="$TFVARS_FILE" -var="backend_subscription_id=${{ secrets.AZURE_DEV_SUBSCRIPTION_ID }}" -auto-approve
 
       - name: Export Terraform Outputs
         id: tf-outputs

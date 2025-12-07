@@ -14,6 +14,7 @@ terraform {
      container_name       = "tfstate"
      key                  = "location-detector.tfstate"
      use_oidc             = true
+     subscription_id      = var.backend_subscription_id
    }
 }
 
