@@ -122,8 +122,8 @@ jobs:
       - name: Capture Terraform Output
         id: tf-out
         run: |
-          PLAN_OUTPUT=$(terraform output -json)
-          echo "son=$PLAN_OUTPUT" >> $GITHUB_OUTPUT
+          planoutput=$(terraform output -json)
+          echo "json=$planoutput" >> $GITHUB_OUTPUT
 
       - name: Export Terraform Outputs
         id: tf-outputs
