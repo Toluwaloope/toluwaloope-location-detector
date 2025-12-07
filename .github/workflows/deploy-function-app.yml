@@ -122,6 +122,7 @@ jobs:
       - name: Capture Terraform Output
         id: tf-out
         run: |
+          cd "${{ env.TERRAFORM_PATH }}"
           planoutput=$(terraform output -json)
           echo "Terraform Json Output : $planoutput"
           echo "json=$planoutput" >> $GITHUB_OUTPUT
