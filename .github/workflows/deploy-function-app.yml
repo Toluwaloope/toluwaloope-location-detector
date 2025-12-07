@@ -133,8 +133,6 @@ jobs:
           cd "${{ env.TERRAFORM_PATH }}"
           
           # Capture terraform outputs and filter to clean lines only
-          # RESOURCE_GROUP_NAME=${{ fromJson(steps.tf-out.outputs.json).resource_group_name.value }}
-          # FUNCTION_APP_NAME=${{ fromJson(steps.tf-out.outputs.json).function_app_name.value }}
           RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name 2>/dev/null)
           FUNCTION_APP_NAME=$(terraform output -raw function_app_name 2>/dev/null)
 
