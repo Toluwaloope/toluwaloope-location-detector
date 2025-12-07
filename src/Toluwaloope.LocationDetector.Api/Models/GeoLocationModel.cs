@@ -1,11 +1,12 @@
 using System.Text.Json.Serialization;
+using Toluwaloope.LocationDetector.Api.Interfaces;
 
 namespace Toluwaloope.LocationDetector.Api.Models;
 
 /// <summary>
 /// Represents geolocation information for an IP address.
 /// </summary>
-public class GeoLocationModel
+public class GeoLocationModel : IGeoLocation
 {
     [JsonPropertyName("country")]
     public string Country { get; set; } = string.Empty;
@@ -27,4 +28,9 @@ public class GeoLocationModel
 
     [JsonPropertyName("lon")]
     public float Lon { get; set; }
+
+    public Task<IGeoLocation?> GetGeoLocationAsync(string ip)
+    {
+        throw new NotImplementedException("Use GeoLocationService for retrieving geolocation data.");
+    }
 }

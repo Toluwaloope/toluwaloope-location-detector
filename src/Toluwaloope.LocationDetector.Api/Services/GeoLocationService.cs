@@ -49,17 +49,8 @@ public class GeoLocationService : IGeoLocation
                 return null;
             }
 
-            // Map model to service properties
-            return new GeoLocationService(_logger, null!)
-            {
-                Country = model.Country,
-                City = model.City,
-                RegionName = model.RegionName,
-                Zip = model.Zip,
-                Query = model.Query,
-                Lat = model.Lat,
-                Lon = model.Lon
-            };
+            // Return the deserialized model
+            return model;
         }
         catch (JsonException ex)
         {

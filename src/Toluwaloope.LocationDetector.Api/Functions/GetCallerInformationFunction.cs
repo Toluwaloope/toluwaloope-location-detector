@@ -51,7 +51,7 @@ public class GetCallerInformationFunction
                 return new NotFoundObjectResult(errorMessage);
             }
 
-            _logger.LogInformation("Location details - {location} ", location);
+            _logger.LogInformation("Location details - City: {City}, Zip: {Zip}, Region: {Region}, Country: {Country}, Lat: {Lat}, Lon: {Lon}", location.City, location.Zip, location.RegionName, location.Country, location.Lat, location.Lon);
             
             var responseMessage = string.Format("Gotcha!! Toluwaloope location detector has detected your IP: {0} | Location: {1}, {2}, {3}, {4} (Lat: {5}, Long: {6})", ip, location.City, location.Zip, location.RegionName, location.Country, location.Lat, location.Lon);
             _logger.LogInformation("Successfully resolved location for IP {Ip}", ip);
