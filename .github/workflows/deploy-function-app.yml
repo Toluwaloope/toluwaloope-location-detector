@@ -124,9 +124,26 @@ jobs:
         run: |
           cd "${{ env.TERRAFORM_PATH }}"
           
-          RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name)
-          FUNCTION_APP_NAME=$(terraform output -raw function_app_name)
+          # Capture terraform outputs and filter to clean lines only
+          RESOURCE_GROUP_NAME=$(terraform output -raw resource_group_name 2>/dev/null | grep -v '::' | grep -v 'Terraform' | tail -1)
+          FUNCTION_APP_NAME=$(terraform output -raw function_app_name 2>/dev/null | grep -v '::' | grep -v 'Terraform' | tail -1)
           
+          # Verify we got values
+          if [ -z "$RESOURCE_GROUP_NAME" ]; then
+            echo "Error: Could not retrieve resource_group_name"
+            exit 1
+          fi
+          
+          if [ -z "$FUNCTION_APP_NAME" ]; then
+            echo "Error: Could not retrieve function_app_name"
+            exit 1
+          fi
+          
+          # Output the values for verification
+          echo "Resource Group: $RESOURCE_GROUP_NAME"
+          echo "Function App: $FUNCTION_APP_NAME"
+          
+          # Write to GITHUB_OUTPUT
           echo "resource_group_name=$RESOURCE_GROUP_NAME" >> $GITHUB_OUTPUT
           echo "function_app_name=$FUNCTION_APP_NAME" >> $GITHUB_OUTPUT
 
