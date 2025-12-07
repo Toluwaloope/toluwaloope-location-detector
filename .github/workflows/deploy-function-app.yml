@@ -289,7 +289,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     name: Send Deployment Notification
-    needs: [provision-infrastructure, build, deploy-dev, deploy-production, post-deployment-tests]
+    needs: [provision-infrastructure, build, deploy-dev, deploy-production]
     if: always()
 
     steps:
