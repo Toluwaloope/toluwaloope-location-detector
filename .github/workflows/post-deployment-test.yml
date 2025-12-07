@@ -1,0 +1,48 @@
+name: Function App Post-Deployment Validation
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      function_app_name:
+        required: true
+        type: string
+      resource_group_name:
+        required: true
+        type: string
+      api_path:
+        required: true
+        type: string
+
+jobs:
+  post-deployment-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Wait for deployment to stabilize
+        shell: bash
+        run: sleep 30
+
+      - name: Health check
+        shell: bash
+        run: |
+          FUNCTION_APP_NAME="${{ inputs.function_app_name }}"
+          FUNCTION_APP_URL="https://${FUNCTION_APP_NAME}.azurewebsites.net${{ inputs.api_path }}"
+          echo "Testing function endpoint: $FUNCTION_APP_URL"
+          
+          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" "$FUNCTION_APP_URL")
+          BODY=$(cat /tmp/response.txt)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ $HTTP_CODE -ge 200 ] && [ $HTTP_CODE -lt 400 ]; then
+            echo "✓ Health check passed"
+          else
+            echo "✗ Health check failed with status code: $HTTP_CODE"
+            exit 1
+          fi
