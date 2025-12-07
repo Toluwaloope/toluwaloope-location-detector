@@ -76,10 +76,9 @@ jobs:
           cd "${{ env.TERRAFORM_PATH }}"
           WORKSPACE="${{ github.event.inputs.environment }}"
           
-          # Create workspace if it doesn't exist, or select if it does
-          if terraform workspace list | grep -q "$WORKSPACE"; then
-            echo "Selecting existing workspace: $WORKSPACE"
-            terraform workspace select "$WORKSPACE"
+          # Check if workspace exists and select it, otherwise create new one
+          if terraform workspace select "$WORKSPACE" 2>/dev/null; then
+            echo "Selected existing workspace: $WORKSPACE"
           else
             echo "Creating new workspace: $WORKSPACE"
             terraform workspace new "$WORKSPACE"
