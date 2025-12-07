@@ -1,13 +1,21 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Toluwaloope.LocationDetector.Api.Interfaces;
+using Toluwaloope.LocationDetector.Api.Services;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
-    .ConfigureServices(services => {
+    .ConfigureServices(services =>
+    {
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
-        services.AddSingleton<Toluwaloope.LocationDetector.Api.Interfaces.IGeoLocation, Toluwaloope.LocationDetector.Api.GeoLocation>();
+        
+        // Register HTTP client factory
+        services.AddHttpClient();
+        
+        // Register services
+        services.AddSingleton<IGeoLocation, GeoLocationService>();
     })
     .Build();
 
