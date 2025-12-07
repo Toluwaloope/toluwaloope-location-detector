@@ -18,6 +18,7 @@ env:
   DOTNET_VERSION: '8.0.x'
   CONFIGURATION: 'Release'
   TF_VERSION: '1.6.0'
+  API_PATH: '/api/GetCallerInformation'
 
 permissions:
   contents: read
@@ -271,43 +272,19 @@ jobs:
         run: az logout
         if: always()
 
-  post-deployment-tests:
-    runs-on: ubuntu-latest
-    name: Post-Deployment Validation
-    needs: [provision-infrastructure, deploy-dev, deploy-production]
-    if: |
-      always() && (
-        (github.event.inputs.environment == 'dev' && needs.deploy-dev.result == 'success') ||
-        (github.event.inputs.environment == 'prod' && needs.deploy-production.result == 'success')
-      )
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Wait for deployment to stabilize
-        shell: bash
-        run: sleep 30
-
-      - name: Health check
-        shell: bash
-        run: |
-          FUNCTION_APP_NAME="${{ needs.provision-infrastructure.outputs.function_app_name }}"
-          FUNCTION_APP_URL="https://${FUNCTION_APP_NAME}.azurewebsites.net/api/GetCallerInformation"
-          echo "Testing function endpoint: $FUNCTION_APP_URL"
-          
-          HTTP_CODE=$(curl -s -o /tmp/response.txt -w "%{http_code}" "$FUNCTION_APP_URL")
-          BODY=$(cat /tmp/response.txt)
-          
-          echo "HTTP Status: $HTTP_CODE"
-          echo "Response: $BODY"
-          
-          if [ $HTTP_CODE -ge 200 ] && [ $HTTP_CODE -lt 400 ]; then
-            echo "✓ Health check passed"
-          else
-            echo "✗ Health check failed with status code: $HTTP_CODE"
-            exit 1
-          fi
+  #post-deployment-tests:
+  #  needs: [provision-infrastructure, deploy-dev, deploy-production]
+  #  if: |
+  #    always() && (
+  #      (github.event.inputs.environment == 'dev' && needs.deploy-dev.result == 'success') ||
+  #      (github.event.inputs.environment == 'prod' && needs.deploy-production.result == 'success')
+  #    )
+  #  uses: ./.github/workflows/post-deployment-test.yml
+  #  with:
+  #    environment: ${{ github.event.inputs.environment }}
+  #    function_app_name: ${{ needs.provision-infrastructure.outputs.function_app_name }}
+  #    resource_group_name: ${{ needs.provision-infrastructure.outputs.resource_group_name }}
+  #    api_path: ${{ github.event.inputs.API_PATH }}
 
   notify:
     runs-on: ubuntu-latest

@@ -7,6 +7,7 @@ var host = new HostBuilder()
     .ConfigureServices(services => {
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
+        services.AddSingleton<Toluwaloope.LocationDetector.Api.Interfaces.IGeoLocation, Toluwaloope.LocationDetector.Api.GeoLocation>();
     })
     .Build();
 
