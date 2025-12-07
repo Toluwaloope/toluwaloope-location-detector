@@ -27,6 +27,11 @@ jobs:
   provision-infrastructure:
     runs-on: ubuntu-latest
     name: Provision Toluwaloope.LocationDetector.Api's Infrastructure
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ github.event.inputs.environment == 'dev' && secrets.AZURE_DEV_SUBSCRIPTION_ID || secrets.AZURE_PROD_SUBSCRIPTION_ID }}
     outputs:
       resource_group_name: ${{ steps.tf-outputs.outputs.resource_group_name }}
       function_app_name: ${{ steps.tf-outputs.outputs.function_app_name }}
