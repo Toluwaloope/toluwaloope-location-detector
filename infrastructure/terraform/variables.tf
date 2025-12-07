@@ -44,9 +44,3 @@ variable "tags" {
     Project = "toluwaloope-location-detector"
   }
 }
-
-variable "backend_subscription_id" {
-  description = "Subscription ID for the backend storage account"
-  type        = string
-  default     = ""
-}

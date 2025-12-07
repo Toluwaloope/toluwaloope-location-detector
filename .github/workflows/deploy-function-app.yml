@@ -110,14 +110,14 @@ jobs:
             echo "Error: tfvars file not found: $TFVARS_FILE"
             exit 1
           fi
-          terraform plan -var-file="$TFVARS_FILE" -var="backend_subscription_id=${{ secrets.AZURE_DEV_SUBSCRIPTION_ID }}"
+          terraform plan -var-file="$TFVARS_FILE"
 
       - name: Terraform Apply
         shell: bash
         run: |
           cd "${{ env.TERRAFORM_PATH }}"
           TFVARS_FILE="${{ github.event.inputs.environment }}.tfvars"
-          terraform apply -var-file="$TFVARS_FILE" -var="backend_subscription_id=${{ secrets.AZURE_DEV_SUBSCRIPTION_ID }}" -auto-approve
+          terraform apply -var-file="$TFVARS_FILE" -auto-approve
 
       - name: Export Terraform Outputs
         id: tf-outputs
