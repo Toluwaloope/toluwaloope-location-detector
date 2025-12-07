@@ -12,6 +12,11 @@ public interface IGeoLocation
     string Country { get; }
 
     /// <summary>
+    /// Gets the zip code.
+    /// </summary>
+    string Zip { get; }
+    
+    /// <summary>
     /// Gets the city name.
     /// </summary>
     string City { get; }
