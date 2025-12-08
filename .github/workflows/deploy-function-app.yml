@@ -194,23 +194,23 @@ jobs:
           name: function-app-${{ github.sha }}
           path: .
 
-      - name: Azure login with OIDC (Dev)
+      - name: Azure login with OIDC
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Dev Function App
+      - name: Deploy to Function App
         uses: azure/functions-action@v1
         with:
           app-name: ${{ needs.provision-infrastructure.outputs.function_app_name }}
           package: ./function-app.zip
 
-      - name: Verify Dev deployment
+      - name: Verify Deployment
         shell: bash
         run: |
-          echo "✓ Checking Dev Azure Function App deployment status..."
+          echo "✓ Checking Azure Function App deployment status..."
           az functionapp show \
             --resource-group ${{ needs.provision-infrastructure.outputs.resource_group_name }} \
             --name ${{ needs.provision-infrastructure.outputs.function_app_name }} \
@@ -234,7 +234,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     name: Send Deployment Notification
-    needs: [provision-infrastructure, build, deploy-dev, deploy-production]
+    needs: [provision-infrastructure, build, deploy]
     if: always()
 
     steps:
@@ -243,11 +243,7 @@ jobs:
         shell: bash
         run: |
           ENVIRONMENT="${{ github.event.inputs.environment }}"
-          if [ "$ENVIRONMENT" = "dev" ]; then
-            DEPLOY_RESULT="${{ needs.deploy-dev.result }}"
-          else
-            DEPLOY_RESULT="${{ needs.deploy-production.result }}"
-          fi
+          DEPLOY_RESULT="${{ needs.deploy.result }}"
           
           if [ "$DEPLOY_RESULT" = "success" ] && [ "${{ needs.post-deployment-tests.result }}" = "success" ]; then
             echo "STATUS=✅ Deployment Successful" >> $GITHUB_ENV
@@ -280,10 +276,7 @@ jobs:
           **Workflow Results:**
           - Build: ${{ needs.build.result }}
           - Infrastructure: success
-          - Deploy: ${{ github.event.inputs.environment == 'dev' && needs.deploy-dev.result || needs.deploy-production.result }}
+          - Deploy: ${{ needs.deploy.result }}
           - Health Check: ${{ needs.post-deployment-tests.result }}
           
-          **Subscription IDs:**
-          - Dev: \`${{ secrets.AZURE_DEV_SUBSCRIPTION_ID }}\`
-          - Production: \`${{ secrets.AZURE_PROD_SUBSCRIPTION_ID }}\`
           EOF
