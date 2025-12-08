@@ -5,8 +5,7 @@ This document outlines all prerequisites and setup steps required to deploy the 
 ## Prerequisites
 
 ### 1. Azure Subscriptions
-- **Development Subscription**: Used for staging and backend Terraform state
-- **Production Subscription**: Used for production deployments
+-  Used for deployments and backend Terraform state
 
 ### 2. GitHub Repository
 - Actions must be enabled
@@ -25,8 +24,6 @@ This document outlines all prerequisites and setup steps required to deploy the 
 ### 1. Create Microsoft Entra ID (Azure AD) Application
 
 #### Step 1: Register Application in Each Subscription
-
-For **both Development and Production** subscriptions:
 
 1. Go to Azure Portal → Microsoft Entra ID → App registrations
 2. Click **New registration**
@@ -50,8 +47,7 @@ For each registered application:
 Set the following secrets in your repository:
 - `AZURE_CLIENT_ID` (Service Principal Client ID)
 - `AZURE_TENANT_ID` (Azure Tenant ID)
-- `AZURE_DEV_SUBSCRIPTION_ID` (Dev Subscription ID)
-- `AZURE_PROD_SUBSCRIPTION_ID` (Prod Subscription ID)
+- `AZURE_SUBSCRIPTION_ID` (Subscription ID)
 
 ---
 
@@ -90,7 +86,6 @@ GET https://<function-app-name>.azurewebsites.net/api/GetCallerInformation
 - Code: `src/Toluwaloope.LocationDetector.Api`
 - Infra: `infrastructure/terraform`
 - Build: `dotnet build src/Toluwaloope.LocationDetector.Api`
-- Run: `func start`
 
 ---
 

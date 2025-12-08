@@ -49,7 +49,7 @@ The response will include geolocation details for the caller's IP address.
   ```sh
   dotnet build src/Toluwaloope.LocationDetector.Api
   ```
-- To run locally:
+- To run locally: Follow this [Azure guide](https://learn.microsoft.com/en-us/azure/azure-functions/functions-develop-local?pivots=programming-language-csharp)
   ```sh
   func start
   ```

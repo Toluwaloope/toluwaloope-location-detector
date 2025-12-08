@@ -31,7 +31,7 @@ terraform/
 
 1. **Terraform** >= 1.6.0 installed
 2. **Azure CLI** installed and authenticated (OIDC preferred for CI/CD)
-3. **Azure Subscriptions**: Dev (for backend and dev resources), Prod (for prod resources)
+3. **Azure Subscriptions**: For backend and dev resources.
 4. **Service Principal** with Contributor role (OIDC setup for GitHub Actions)
 
 ## Usage
@@ -48,7 +48,6 @@ terraform/
 2. Initialize Terraform (always uses dev subscription for backend):
 
    ```sh
-   export ARM_SUBSCRIPTION_ID=<AZURE_SUBSCRIPTION_ID>
    terraform init
    ```
 
@@ -73,7 +72,7 @@ terraform/
 
 - The workflow `.github/workflows/deploy-function-app.yml` automates provisioning and deployment.
 - The backend always uses the dev subscription for state, but resources are deployed to the selected environment's subscription.
-- Secrets required: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_DEV_SUBSCRIPTION_ID`, `AZURE_PROD_SUBSCRIPTION_ID`
+- Secrets required: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`
 
 ## Notes
 
