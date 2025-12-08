@@ -1,14 +1,14 @@
 # Toluwaloope Location Detector - Terraform Infrastructure
 
-This directory contains Terraform Infrastructure as Code (IaC) for deploying the Toluwaloope Location Detector Azure Function App.
+This directory contains Terraform Infrastructure as Code (IaC) for deploying the Toluwaloope Location Detector Azure Function App and its supporting resources in Azure.
 
 ## Overview
 
-The Terraform stack creates the following resources in Azure:
+The Terraform stack provisions the following Azure resources:
 
-- **Resource Group**: Dedicated resource group per environment
-- **Storage Account**: For Function App runtime
-- **App Service Plan**: Windows-based hosting plan
+- **Resource Group**: Per environment (dev/prod)
+- **Storage Account**: For Function App runtime and Terraform backend state
+- **App Service Plan**: Hosting plan for the Function App
 - **Windows Function App**: .NET 8.0 isolated runtime
 - **Application Insights**: Monitoring and diagnostics
 - **Log Analytics Workspace**: Log aggregation and analysis
@@ -18,161 +18,84 @@ The Terraform stack creates the following resources in Azure:
 
 ```
 terraform/
-├── provider.tf          # Provider configuration and backend setup
+├── provider.tf          # Provider configuration and backend setup (uses dev subscription for backend)
 ├── variables.tf         # Variable definitions
-├── locals.tf           # Local values and naming conventions
-├── main.tf             # Main resource definitions
-├── outputs.tf          # Output values
-├── dev.tfvars          # Development environment variables
-└── prod.tfvars         # Production environment variables
+├── locals.tf            # Local values and naming conventions
+├── main.tf              # Main resource definitions
+├── outputs.tf           # Output values
+├── dev.tfvars           # Development environment variables
+└── prod.tfvars          # Production environment variables
 ```
 
 ## Prerequisites
 
-1. **Terraform** >= 1.0 installed
-2. **Azure CLI** installed and authenticated
-3. **Azure Subscription** with appropriate permissions
-4. **Service Principal** (for CI/CD deployments)
+1. **Terraform** >= 1.6.0 installed
+2. **Azure CLI** installed and authenticated (OIDC preferred for CI/CD)
+3. **Azure Subscriptions**: Dev (for backend and dev resources), Prod (for prod resources)
+4. **Service Principal** with Contributor role (OIDC setup for GitHub Actions)
 
 ## Usage
 
 ### Local Deployment
 
-#### Initialize Terraform
+1. Authenticate with Azure:
 
-```bash
-cd infrastructure/terraform
+   ```sh
+   az login
+   az account set --subscription <SUBSCRIPTION_ID>
+   ```
 
-# Initialize Terraform working directory
-terraform init
-```
+2. Initialize Terraform (always uses dev subscription for backend):
 
-#### Plan Infrastructure
+   ```sh
+   export ARM_SUBSCRIPTION_ID=<AZURE_SUBSCRIPTION_ID>
+   terraform init
+   ```
 
-```bash
-# For development environment
-terraform plan -var-file="dev.tfvars" -out=plan.dev
+3. Select or create workspace:
 
-# For production environment
-terraform plan -var-file="prod.tfvars" -out=plan.prod
-```
+   ```sh
+   terraform workspace select dev || terraform workspace new dev
+   terraform workspace select prod || terraform workspace new prod
+   ```
 
-#### Apply Infrastructure
+4. Plan and apply for the target environment:
 
-```bash
-# For development environment
-terraform apply plan.dev
+   ```sh
+   terraform plan -var-file=dev.tfvars
+   terraform apply -var-file=dev.tfvars
+   # or for prod
+   terraform plan -var-file=prod.tfvars
+   terraform apply -var-file=prod.tfvars
+   ```
 
-# For production environment
-terraform apply plan.prod
-```
+### CI/CD Deployment (GitHub Actions)
 
-### CI/CD Deployment
+- The workflow `.github/workflows/deploy-function-app.yml` automates provisioning and deployment.
+- The backend always uses the dev subscription for state, but resources are deployed to the selected environment's subscription.
+- Secrets required: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_DEV_SUBSCRIPTION_ID`, `AZURE_PROD_SUBSCRIPTION_ID`
 
-The infrastructure is automatically deployed via GitHub Actions in the deployment workflow. Terraform is executed with appropriate credentials and variables based on the target environment.
+## Notes
 
-## Variables
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `environment` | Environment name (dev or prod) | N/A | Yes |
-| `location` | Azure region | `East US` | No |
-| `project_name` | Project name | `toluwaloope-location-detector` | No |
-| `app_service_plan_sku` | App Service Plan SKU | Dev: `Y1`, Prod: `B1` | No |
-| `storage_account_tier` | Storage tier | `Standard` | No |
-| `storage_account_replication_type` | Storage replication | `LRS` | No |
-| `tags` | Resource tags | See tfvars | No |
+- **Backend State**: The Terraform backend (state) is always stored in the dev subscription's storage account.
+- **Workspaces**: Use `dev` and `prod` workspaces for environment isolation.
+- **OIDC Authentication**: Recommended for CI/CD; see project `DEPLOYMENT_REQUIREMENTS.md` for setup.
 
 ## Outputs
 
-After applying, the following outputs are available:
-
-- `resource_group_name`: Name of the created resource group
-- `function_app_name`: Name of the Function App
-- `function_app_default_hostname`: Default hostname (URL)
-- `storage_account_name`: Storage account name
-- `app_insights_instrumentation_key`: Application Insights key
-- `service_plan_id`: App Service Plan ID
-- `function_app_identity_principal_id`: Managed Identity Principal ID
-
-## State Management
-
-By default, Terraform state is stored locally. For production deployments, use remote state:
-
-1. Create an Azure Storage Account for Terraform state
-2. Uncomment the `backend` block in `provider.tf`
-3. Update the storage account name and container details
-
-## Environment SKUs
-
-- **Development**: `Y1` (Consumption plan - free tier)
-- **Production**: `B1` (Basic plan - for guaranteed performance)
-
-## Destroying Resources
-
-**Warning**: This will delete all resources in the resource group.
-
-```bash
-# For development environment
-terraform destroy -var-file="dev.tfvars"
-
-# For production environment
-terraform destroy -var-file="prod.tfvars"
-```
+- Resource group name
+- Function app name
+- Other resource identifiers for deployment and monitoring
 
 ## Troubleshooting
 
-### Authentication Issues
+- Ensure correct subscription is set for resource deployment
+- Ensure backend storage account exists in dev subscription
+- Check workspace selection before plan/apply
+- Review workflow logs for errors
 
-Ensure you're authenticated with Azure:
+## References
 
-```bash
-az login
-```
-
-### State Lock
-
-If Terraform state is locked, you may need to:
-
-```bash
-terraform force-unlock <LOCK_ID>
-```
-
-### Import Existing Resources
-
-If resources already exist:
-
-```bash
-terraform import azurerm_resource_group.this /subscriptions/<subscription-id>/resourceGroups/<rg-name>
-```
-
-## Cost Considerations
-
-- **Development**: Consumption plan (Y1) - Pay per execution
-- **Production**: Basic plan (B1) - Approximately $10-15/month
-- **Storage**: Minimal cost for function runtime storage
-- **Application Insights**: Free tier (1 GB/month)
-
-## Security Best Practices
-
-1. Never commit sensitive values to version control
-2. Use Azure Managed Identities for authentication
-3. Enable diagnostic logging for audit trails
-4. Restrict CORS origins in production
-5. Use resource locks in production
-
-## Contributing
-
-When modifying Terraform configurations:
-
-1. Run `terraform fmt` to format code
-2. Run `terraform validate` to check syntax
-3. Test in dev environment first
-4. Review all resource changes before apply
-
-## Support
-
-For issues or questions, please refer to:
-
-- [Azure Terraform Provider Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
-- [Azure Function App Documentation](https://learn.microsoft.com/en-us/azure/azure-functions/)
+- [Terraform Azure Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
+- [Azure Functions Documentation](https://learn.microsoft.com/en-us/azure/azure-functions/)
+- [GitHub Actions OIDC with Azure](https://learn.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation-create-trust-github?tabs=azure-portal)
