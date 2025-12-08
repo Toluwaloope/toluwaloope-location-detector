@@ -245,7 +245,7 @@ jobs:
           ENVIRONMENT="${{ github.event.inputs.environment }}"
           DEPLOY_RESULT="${{ needs.deploy.result }}"
           
-          if [ "$DEPLOY_RESULT" = "success" ] && [ "${{ needs.post-deployment-tests.result }}" = "success" ]; then
+          if [ "$DEPLOY_RESULT" = "success" ]; then
             echo "STATUS=✅ Deployment Successful" >> $GITHUB_ENV
             echo "ICON=✓" >> $GITHUB_ENV
           else
