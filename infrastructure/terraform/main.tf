@@ -41,6 +41,8 @@ resource "azurerm_windows_function_app" "this" {
 
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME                   = "dotnet-isolated"
+    APPLICATIONINSIGHTS_CONNECTION_STRING      = azurerm_application_insights.this.connection_string
+    APPINSIGHTS_CONNECTIONSTRING               = azurerm_application_insights.this.connection_string
     APPINSIGHTS_INSTRUMENTATIONKEY             = azurerm_application_insights.this.instrumentation_key
     ApplicationInsightsAgent_EXTENSION_VERSION = "~3"
   }

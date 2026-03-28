@@ -29,7 +29,7 @@ public class GeoLocationModel : IGeoLocation
     [JsonPropertyName("lon")]
     public float Lon { get; set; }
 
-    public Task<IGeoLocation?> GetGeoLocationAsync(string ip)
+    public Task<IGeoLocation?> GetGeoLocationAsync(string ip, string correlationId)
     {
         throw new NotImplementedException("Use GeoLocationService for retrieving geolocation data.");
     }

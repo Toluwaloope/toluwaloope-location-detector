@@ -45,6 +45,7 @@ public interface IGeoLocation
     /// Retrieves geolocation information for the specified IP address asynchronously.
     /// </summary>
     /// <param name="ip">The IP address to query for geolocation information.</param>
+    /// <param name="correlationId">The correlation ID used for end-to-end request tracing.</param>
     /// <returns>A task representing the asynchronous operation. The result is a GeoLocation object containing the geolocation data, or null if the operation fails.</returns>
-    Task<IGeoLocation?> GetGeoLocationAsync(string ip);
+    Task<IGeoLocation?> GetGeoLocationAsync(string ip, string correlationId);
 }
