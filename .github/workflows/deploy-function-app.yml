@@ -63,6 +63,7 @@ jobs:
 
       - name: Configure Terraform Backend
         run: |
+          cd "${{ env.TERRAFORM_PATH }}"
           sed -i 's/resource_group_name\s*=\s*"[^"]*"/resource_group_name  = "${{ vars.TF_STATE_RESOURCE_GROUP }}"/' provider.tf
           sed -i 's/storage_account_name\s*=\s*"[^"]*"/storage_account_name = "${{ vars.TF_STATE_STORAGE_ACCOUNT }}"/' provider.tf
           sed -i 's/container_name\s*=\s*"[^"]*"/container_name       = "${{ vars.TF_STATE_CONTAINER  }}"/' provider.tf
