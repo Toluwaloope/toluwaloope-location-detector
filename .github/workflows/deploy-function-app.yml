@@ -61,6 +61,15 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Configure Terraform Backend
+        run: |
+          sed -i 's/resource_group_name\s*=\s*"[^"]*"/resource_group_name  = "${{ vars.TF_STATE_RESOURCE_GROUP }}"/' provider.tf
+          sed -i 's/storage_account_name\s*=\s*"[^"]*"/storage_account_name = "${{ vars.TF_STATE_STORAGE_ACCOUNT }}"/' provider.tf
+          sed -i 's/container_name\s*=\s*"[^"]*"/container_name       = "${{ vars.TF_STATE_CONTAINER  }}"/' provider.tf
+          sed -i 's/key\s*=\s*"[^"]*"/key                  = "${{ vars.TF_STATE_KEY }}"/' provider.tf
+          echo "Updated provider.tf backend configuration:"
+          grep -A 6 'backend "azurerm"' provider.tf
+
       - name: Terraform Init
         shell: bash
         run: |
