@@ -1,6 +1,12 @@
 {
     "version": "2.0",
     "logging": {
+        "logLevel": {
+            "default": "Information",
+            "Function": "Information",
+            "Function.GetCallerInformation.User": "Information",
+            "Host.Results": "Information"
+        },
         "applicationInsights": {
             "samplingSettings": {
                 "isEnabled": true,
